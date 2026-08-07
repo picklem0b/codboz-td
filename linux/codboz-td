@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+# ============================================================
+# COD Tower Defense — Linux launcher
+#
+# Serves the game folder on localhost (the game needs http://,
+# not file://, to load its 3D models and music) and opens it
+# in your default browser.
+#
+# Usage:
+#   codboz-td                 start the game
+#   codboz-td --native        try a native window (pywebview) if installed
+#   codboz-td --port 9000     use a specific port
+#
+# Env: CODBOZ_PORT, CODBOZ_NO_OPEN (don't launch a browser)
+# ============================================================
+set -euo pipefail
+
+SELF="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# --- resolve the game directory ---------------------------------
+GAME_DIR=""
+if [ -f "$SELF/../index.html" ]; then
+  GAME_DIR="$(cd "$SELF/.." && pwd)"
+elif [ -f "$HOME/.local/share/codboz-td/index.html" ]; then
+  GAME_DIR="$HOME/.local/share/codboz-td"
+fi
+if [ -z "$GAME_DIR" ]; then
+  echo "COD TD: couldn't find the game files (index.html) near $SELF" >&2
+  exit 1
+fi
+
+PORT="${CODBOZ_PORT:-8080}"
+URL="http://127.0.0.1:$PORT/"
+NATIVE=0
+[ "${1:-}" = "--native" ] && NATIVE=1
+case "${1:-}" in
+  --port) PORT="${2:-}" ; URL="http://127.0.0.1:$PORT/" ;;
+esac
+if ! [[ "$PORT" =~ ^[1-9][0-9]*$ ]]; then
+  echo "COD TD: invalid port: $PORT" >&2; exit 1
+fi
+
+# --- find a free port if the requested one is busy ---------------
+if python3 -c "import socket; s=socket.socket(); s.bind(('127.0.0.1',int('$PORT'))); s.close()" 2>/dev/null; then
+  :
+else
+  for p in $(seq $((PORT+1)) $((PORT+20))); do
+    if python3 -c "import socket; s=socket.socket(); s.bind(('127.0.0.1',int('$p'))); s.close()" 2>/dev/null; then
+      PORT="$p"; URL="http://127.0.0.1:$PORT/"; break
+    fi
+  done
+fi
+
+# --- start the server ---------------------------------------------
+echo "COD Tower Defense -> $URL"
+python3 -m http.server "$PORT" --bind 127.0.0.1 --directory "$GAME_DIR" >/dev/null 2>&1 &
+SRV=$!
+trap 'kill "$SRV" 2>/dev/null || true' EXIT INT TERM
+
+# health probe: prefer curl, fall back to python urllib (no curl needed)
+probe() {
+  if command -v curl >/dev/null 2>&1; then
+    curl -s -o /dev/null "$URL" 2>/dev/null
+  else
+    python3 -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('$URL', timeout=1).getcode() == 200 else 1)" 2>/dev/null
+  fi
+}
+# wait until the server answers (max ~5s)
+UP=0
+for _ in $(seq 1 50); do
+  if probe; then UP=1; break; fi
+  sleep 0.1
+done
+if [ "$UP" != "1" ]; then
+  echo "COD TD: server failed to start on port $PORT — is another server running?" >&2
+  exit 1
+fi
+
+# --- open it -------------------------------------------------------
+if [ "${CODBOZ_NO_OPEN:-0}" != "1" ]; then
+  if [ "$NATIVE" = "1" ] && python3 -c "import webview" 2>/dev/null; then
+    # native window via pywebview (optional; falls back to browser if missing)
+    python3 - "$URL" <<'PYEOF' &
+import sys, webview
+webview.create_window("COD Tower Defense", sys.argv[1], width=1100, height=760, resizable=True)
+webview.start()
+PYEOF
+    NATIVE_PID=$!
+    trap 'kill "$SRV" 2>/dev/null || true; kill "$NATIVE_PID" 2>/dev/null || true' EXIT INT TERM
+    wait "$NATIVE_PID"
+  else
+    if command -v xdg-open >/dev/null 2>&1; then
+      xdg-open "$URL" >/dev/null 2>&1 &
+    elif command -v sensible-browser >/dev/null 2>&1; then
+      sensible-browser "$URL" >/dev/null 2>&1 &
+    else
+      echo "Open $URL in your browser"
+    fi
+    echo "(close this terminal or press Ctrl+C to stop the server)"
+    wait "$SRV"
+  fi
+else
+  wait "$SRV"
+fi

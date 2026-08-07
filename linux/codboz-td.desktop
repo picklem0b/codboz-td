@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=COD Tower Defense
+Comment=Zombie tower defense — build towers, survive the horde
+Exec=codboz-td
+Icon=codboz-td
+Terminal=false
+Categories=Game;ArcadeGame;
+StartupNotify=true

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1c0f08"/>
+      <stop offset="1" stop-color="#0b0604"/>
+    </linearGradient>
+    <linearGradient id="skin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6fae57"/>
+      <stop offset="1" stop-color="#4a7d39"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="26" fill="url(#bg)"/>
+  <!-- head -->
+  <path d="M32 62 C32 30 52 22 64 22 C76 22 96 30 96 62 L96 78 C96 88 88 96 78 96 L50 96 C40 96 32 88 32 78 Z" fill="url(#skin)"/>
+  <!-- torn jaw -->
+  <path d="M40 92 L48 82 L58 92 L64 80 L72 92 L84 80 L90 92" fill="none" stroke="#3a662c" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- stitches -->
+  <path d="M56 28 L66 36 M74 28 L82 34" fill="none" stroke="#2f5223" stroke-width="3" stroke-linecap="round"/>
+  <!-- eyes -->
+  <ellipse cx="52" cy="54" rx="9" ry="11" fill="#0b0604"/>
+  <ellipse cx="76" cy="54" rx="9" ry="11" fill="#0b0604"/>
+  <circle cx="54" cy="56" r="3.4" fill="#ffb347"/>
+  <circle cx="78" cy="56" r="3.4" fill="#ffb347"/>
+  <!-- brows -->
+  <path d="M42 42 L60 46 M86 42 L68 46" fill="none" stroke="#2f5223" stroke-width="4" stroke-linecap="round"/>
+  <!-- blood drip -->
+  <path d="M88 70 q4 8 0 12" fill="none" stroke="#c1272d" stroke-width="3" stroke-linecap="round"/>
+  <!-- muzzle flash accent -->
+  <circle cx="64" cy="18" r="3" fill="#ff8a2a"/>
+</svg>
